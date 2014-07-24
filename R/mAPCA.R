@@ -12,7 +12,7 @@
 #' @export
 #' @examples
 #' data(nycdat)
-#' mAPCA(nycdat)
+#' mAPCA(list(nycdat))
 mAPCA <- function(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL, 
     cut = 1, lim = 50) {
     
