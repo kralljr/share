@@ -4,10 +4,17 @@ Version: 0.1
 Author: Jenna Krall <jenna.krall@gmail.com>
 Maintainer: Jenna Krall <jenna.krall@gmail.com>
 Description: share is a new method for estimating major sources
-	of pollution across multiple ambient monitors.  This package
-	contains functions for estimating major sources and for 
-	performing regional and national studies of the health effects
-	associated with short-term exposure to pollution.
+    of pollution across multiple ambient monitors.  This package
+    contains functions for estimating major sources and for
+    performing regional and national studies of the health effects
+    associated with short-term exposure to pollution.
 Depends:
     R (>= 3.0.2)
-License: What license is it under?
+Imports:
+    clue (>= 0.3),
+    lme4 (>= 1.1),
+    tlnise (>= 2.0),
+    Hmisc (>= 3.14)
+Suggests:
+    maps,
+    ggplot2

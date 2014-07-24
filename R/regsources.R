@@ -9,7 +9,6 @@
 #' @param ndays number of days of data necessary to apply PCA
 #' @param nmsource number of major sources.  If null, uses number of eigenvalues of the correlation matrix greater than cut.
 #' @param cut cutoff for eigenvalues (see nmsource), default is 1.
-#' #param ... other arguments
 outervPCA <- function(data, ndays = 50, cut = 1, nmsource = NULL) {
     
     N <- length(data)
@@ -18,37 +17,35 @@ outervPCA <- function(data, ndays = 50, cut = 1, nmsource = NULL) {
     source.sig <- vector(mode = "list", length = N)
     dates <- vector(mode = "list", length = N)
     nums <- 0
-    scores <- list()
+    scores <- list(length = N)
     
     #For each monitor
     for ( i in 1 : N) {    
-        
         #Set data
         dat1 <- data[[i]]
-        if(tolower(colnames(dat1)[1]) != "date") {
+        if(class(dat1[, 1]) != "Date") {
             stop("First column is not date")
         }
-        dates <- dat1[, 1]
+        
+        dates1 <- dat1[, 1]
         dat1 <- dat1[, -1]
         
         #Get complete cases
-        dates[[i]] <- dates[complete.cases(dat1)]
+        dates[[i]] <- dates1[complete.cases(dat1)]
         dat1 <- dat1[complete.cases(dat1), ]
         nc <- ncol(dat1)
         
         #Create concatenated matrix
         if(i == 1) {
-            datall <- vector(, length = nc)
             V <- matrix(nrow = nc, ncol = 1)
         }
-        datall <- rbind(datall, dat1)
         
         
         #Perform if enough data
         if(nrow(dat1) >= ndays) {
             
             #get varimax and unrotated loadings
-            vpc <- vPCAf(data = dat1, cut = cut, ...)
+            vpc <- vPCAf(data = dat1, i = i, cut = cut)
             
             #Set up outcome
             source.sig[[i]] <- vpc$vpc
@@ -58,14 +55,15 @@ outervPCA <- function(data, ndays = 50, cut = 1, nmsource = NULL) {
         }else{
             nums <- c(nums, i)
         }
+
+        
     }#end loop over sites
     
     V <- V[, -1]
     
     #Get major sources
-    datall <- datall[-1, ]
-    mvpc <- vPCAf(t(V), nsources = nmsource, cut = cut)
-    mvpc <- mvpc$vpc
+    major.sig <- vPCAf(t(V), "major", nsources = nmsource, cut = cut)
+    major.sig <- major.sig$vpc
     
     #eliminate sites with not enough data
     if(length(nums) > 1) {
@@ -73,10 +71,11 @@ outervPCA <- function(data, ndays = 50, cut = 1, nmsource = NULL) {
         source.sig <- source.sig[-nums]
     }
     
+    reg <- list()
+    
     reg$source.sig <- source.sig
-    reg$mvpc <- mvpc
+    reg$major.sig <- major.sig
     reg$V <- V
-    reg$datall <- datall
     reg$dates <- dates
     reg$scores <- scores
     
@@ -90,25 +89,26 @@ outervPCA <- function(data, ndays = 50, cut = 1, nmsource = NULL) {
 #' @param data data frame of daily constituent concentrations 
 #' @param nsource number of sources.  If null, uses number of eigenvalues of the correlation matrix greater than cut.
 #' @param cut cutoff for eigenvalues (see nsource), default is 1.
-#' #param ... other arguments
-vPCA <- function(data, nsource = NULL, cut = 1, ...) {
+vPCA <- function(data, nsources = NULL, cut = 1) {
     
     #Perform PCA
-    pc1 <- prcomp(data, retx = T, ...)
+    pc1 <- prcomp(data, retx = T)
     
     #Scale eigenvectors by sdev
     rots <- sweep(pc1$rot, 2, pc1$sdev, "*")
     
     #Specify number of sources
-    if(is.null(nsource)) {
-        nsource <- length(which(pc1$sdev > cut))
+    if(is.null(nsources)) {
+        nsources <- length(which(pc1$sdev > cut))
     }
     
     #Apply varimax rotation
-    vpc <- varimax(rots[, 1 : nsource], normalize = T)
+    vpc1 <- varimax(rots[, 1 : nsources], normalize = T)
     
-    vpc$vpc <- vpc
-    vpc$nsource <- nsource
+    
+    vpc <- list()
+    vpc$vpc <- vpc1
+    vpc$nsources <- nsources
     vpc$pc <- pc1
     
     class(vpc) <- "vpca"
@@ -123,27 +123,28 @@ vPCA <- function(data, nsource = NULL, cut = 1, ...) {
 #' @param data data frame of daily constituent concentrations 
 #' @param nsource number of sources.  If null, uses number of eigenvalues of the correlation matrix greater than cut.
 #' @param cut cutoff for eigenvalues (see nsource), default is 1.
-vPCAf <- function(data, nsources = NULL, cut = 1) {
-    
-    #Number of constituents
-    nc <- ncol(data)
+vPCAf <- function(data, i, nsources = NULL, cut = 1) {
     
     #Standardize data
-    temp <- stdize1(data)
+    temp <- stdize1(data, i)
     dat1 <- temp[[1]]
     wh0 <- temp[[2]]
+    
+    #Number of constituents
+    nc <- ncol(dat1)
+    nc1 <- ncol(data)
     
     #Apply vPCA, PCA
     vpc <- vPCA(data = dat1, cut = cut, nsources = nsources)
     pc <- vpc$pc
-    nsource <- vpc$nsource
-    scores <- pc$x[, 1 : nsource]
-    pc <- pc$rot[1: nc, 1 : nsource]
+    nsources <- vpc$nsources
+    scores <- pc$x[, 1 : nsources]
+    pc <- pc$rot[1: nc, 1 : nsources]
     
-    vpc <- pr1$vpc
-    vpc <- vpc$load[1: nc, 1 : nsource]
+    vpc <- vpc$vpc
+    vpc <- vpc$load[1: nc, 1 : nsources]
     
-    vpc1 <- matrix(rep(NA, nc * nsource), nrow = nc, ncol = nsource)
+    vpc1 <- matrix(rep(0, nc1 * nsources), nrow = nc1, ncol = nsources)
     pc1 <- vpc1
     if(length(wh0 ) > 0) {
         vpc1[-wh0, ] <- vpc
@@ -153,9 +154,10 @@ vPCAf <- function(data, nsources = NULL, cut = 1) {
         pc1 <- pc
     }
     
+    vpc <- list()
     vpc$vpc <- vpc1
     vpc$pc <- pc1
-    vpc$nsource <- nsource
+    vpc$nsources <- nsources
     vpc$scores <- scores
     vpc$data <- dat1
     

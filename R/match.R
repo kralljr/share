@@ -65,6 +65,11 @@ matchfun <- function(source.sig, major.sig, thres = pi/4) {
 #'
 #' @param major.sig major source signatures 
 #' @param source.sig1 local source signature from one monitor
+#' @export
+#' @examples
+#' data(simdat)
+#' share1 <- share(simdat)
+#' angle(share1$major.sig, share1$source.sig)
 angle <- function(major.sig, source.sig1) {
     
     cp <- abs(t(source.sig1) %*% major.sig)

@@ -9,8 +9,10 @@
 #' @param mdl list of MDLs for each monitor if applicable
 #' @param cut cutoff for eigenvalues (see nsource), default is 1.
 #' @param lim Number of days to include data
-#' 
-#' #param ... other arguments
+#' @export
+#' @examples
+#' data(nycdat)
+#' mAPCA(nycdat)
 mAPCA <- function(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL, 
     cut = 1, lim = 50) {
     

@@ -16,7 +16,10 @@
 #' @param nmsources number of major sources.  If null, uses number of eigenvalues of the correlation matrix greater than cut.
 #' @param thres cutoff for angle between local and major sources
 #' @param ndays number of days of data necessary to apply PCA for each monitor
-#' #param ... other arguments
+#' @export
+#' @examples
+#' data(simdat)
+#' share(simdat)
 share <- function(data, cut = 1, nmsources = NULL, thres = pi/4, ndays = 50) {
     
     #Apply vPCA to each monitor and across all monitors
