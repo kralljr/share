@@ -14,7 +14,7 @@ Imports:
     clue (>= 0.3),
     lme4 (>= 1.1),
     tsModel (>= 0.6),
-    tlnise (>= 2.0),
+    tlnise (>= 2.0)
 Suggests:
     maps,
     ggplot2
