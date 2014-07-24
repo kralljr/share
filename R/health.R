@@ -51,10 +51,10 @@ combhealth <- function(regcoef, print = F) {
         
         #combine results
         if(nrow(regcoef1) > 1) {
-            tln1 <- tlnise(Y = regcoef1$est, V = regcoef1$se^2, 
+            tln1 <- tlniseC(Y = regcoef1$est, V = regcoef1$se^2, 
                 prnt = print)
             if(tln1$converge == "no") {
-                tln1 <- tlnise(Y = regcoef1$est, V = regcoef1$se^2, 
+		tln1 <- tlniseC(Y = regcoef1$est, V = regcoef1$se^2, 
                     prnt = print, maxiter = 5000)
                 if(tln1$converge == "no") {
                     cat("\nDid not converge: source", sources[i], "\n")
@@ -360,7 +360,7 @@ tlncomb <- function(ests, Sources, share, sinkf = NULL, names = cities) {
                 
                 print(i)
                 print(c("TLN:", i))
-                temp <- tlnise(Y = order[, 1], V = order[, 2]^2, 
+                temp <- tlniseC(Y = order[, 1], V = order[, 2]^2, 
                                maxiter = 5000)
                 
                 tln[[i]][[1]][lag, ] <- temp$gamma[1:2]
@@ -408,7 +408,7 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
     shareMon <- share[whMon]
     
     
-    #find unique sources in this city
+#find unique sources in this city
     unsource <- sort(unique(unlist(shareMon)))
     whInf <- which(is.infinite(unsource))
     if(length(whInf) > 0) {
