@@ -9,10 +9,9 @@ Description: share is a new method for estimating major sources
     performing regional and national studies of the health effects
     associated with short-term exposure to pollution.
 Depends:
-    R (>= 3.0.2)
+    R (>= 3.0)
 Imports:
     clue (>= 0.3),
-    lme4 (>= 1.1),
     tsModel (>= 0.6),
     tlnise (>= 2.0)
 Suggests:
