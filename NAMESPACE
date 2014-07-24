@@ -2,6 +2,7 @@
 
 export(angle)
 export(mAPCA)
+export(matchfun)
 export(share)
 export(sharehealth)
 export(tlniseC)

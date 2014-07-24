@@ -4,6 +4,7 @@
 #' @param major.sig major source signatures 
 #' @param source.sig local source signatures from all monitors
 #' @param thres cutoff for angle between local and major sources
+#' @export
 matchfun <- function(source.sig, major.sig, thres = pi/4) {
     
     

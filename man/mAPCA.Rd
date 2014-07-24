@@ -26,6 +26,6 @@ mAPCA(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL,
 }
 \examples{
 data(nycdat)
-mAPCA(nycdat)
+mAPCA(list(nycdat))
 }
 
