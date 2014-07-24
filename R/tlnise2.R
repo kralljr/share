@@ -1,6 +1,6 @@
 #' share
 #'
-#' \code{tlnise} tlnise function from tlnise package
+#' \code{tlniseC} tlnise function from tlnise package
 #'
 #' Reproduces tlnise function from tlnise package, but gives convergence output.
 #' See ?tlnise for more info.
