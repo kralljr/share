@@ -6,7 +6,8 @@
 #' See ?tlnise for more info.
 #' 
 #' @export
-tlnise <- function (Y, V, w = NA, V0 = NA, prior = NA, N = 1000, seed = NULL, 
+tlniseC <- function (Y, V, w = NA, V0 = NA, prior = NA, 
+	N = 1000, seed = NULL, 
           Tol = 1e-06, maxiter = 1000, intercept = TRUE, labelY = NA, 
           labelYj = NA, labelw = NA, digits = 4, brief = 1, prnt = TRUE) 
 {
