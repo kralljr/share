@@ -8,32 +8,212 @@
 #' 
 #' @param consdata list of data frames of daily constituent concentrations with date as first column for each monitor
 #' @param healthdata list of data frames corresponding to health counts and covariates with date as first column for each community
-#' @param match vector of length equal to consdata indicating which monitors correspond to which elements in healthdata
+#' @param list list of length equal to healthdata indicating which monitors correspond to which elements in healthdata
 #' @param tots list of vectors corresponding to total concentrations (total PM2.5) for each day and monitor.  If null, uses \code{rowSums(data)}
 #' @param method regional source apportionment method (SHARE or mAPCA)
 #
 #' @export
-sharehealth <- function(consdata, healthdata, match, formula, 
-    lag, groupvar, print = F, 
+sharehealth <- function(consdata, healthdata = NULL, list = NULL, 
+    formula = NULL, iqrs = NULL,
+    lag = NULL, groupvar = NULL, print = F, 
     cut = 1, thres = pi/4,
     tots = NULL, method = "SHARE") {
     
-    out <- list()
+    out <- getsources(consdata, type = tolower(method), tots = tots, list = list)
     
     
-    #get SHARE and source concentrations, averaged over community
-    source1 <- getsources(consdata, cut, thres, method)
-    sourcec <- source1$sources
-    out$iqr <- source1$iqr
+    if(!is.null(healthdata)) {
+        
+        
+        #get source concentrations, averaged over community
+        if(!is.null(list)) {
+           
+            out$sourceorder <- combsource(out$sources, list)
+        }
+
+        
+        #get health effects
+#         regcoef <- gethealth(sourcec, healthdata, formula, lag)
+#         regcoefREG <- combhealth(regcoef, print = print)
+#         
+#         out$regcoef <- regcoefREG
+#         
+#         #iqr increase
+#         if(is.null(iqrs)) {
+#             iqrs <- out$summary["IQR"]
+#         }
+#         
+#         out$iqrinc <- apply(regcoefREG, 2, percinc, iqrs = iqrs)
+#         
+    }
     
-    regcoef <- gethealth(sourcec, healthdata, formula, lag)
-    regcoefREG <- combhealth(regcoef, print = print)
     
-    out$regcoef <- regcoefREG
-    out$iqrinc <- apply(regcoefREG, 2, percinc, iqrs = iqrs)
+
     
     out
 }
+
+
+combsource <- function(outsource, list) {
+    
+    lens <- sapply(list, length)
+    wh <- unlist(list[which(lens > 1)])
+    namesU <- unique(names(wh))
+    
+    sources <- list()
+    for(i in 1 : length(list)) {
+        if(lens[i] == 1) {
+            sources[[i]] <- outsource[list[[i]]]
+        }else{
+            source1 <- outsource[list[[i]]]
+            source1 <- ldply(source1, data.frame)[, -1]
+            sources[[i]] <- aggregate(source1, by = list(source1$date), 
+                                 FUN= "mean", na.rm = T)[, -1]
+        }
+    }
+    names(sources) <- names(list)
+    sources
+}
+
+
+
+
+
+getsources <- function(data, type = "share", tots = tots, list = NULL) {
+    
+    
+    if(type == "share") {        
+        share1 <- share(data)
+        share <- share1$share
+        
+        sources <- list()
+        for(i in 1 : length(data.rr)) {
+            if(is.null(tots)) {
+                tots1 <- tots
+            }else{
+                tots1 <- tots[[i]]
+            }
+            temp <- apca(data[[i]], tots = tots1)$conc
+            temp <- data.frame(data[[i]][, 1], temp)
+            colnames(temp) <- c("date", paste0("source", share[[i]]))
+            sources[[i]] <- temp
+        }
+        
+        major.sig <- share1$major.sig
+        
+    }else if(type == "mapca") {
+        mapca1 <- mAPCA(data, tots = tots)
+        
+        apca <- mapca1[["apca"]]
+        sourcesM <- apca$conc
+        dates <- as.Date(substr(rownames(sourcesM), 1, 10))
+        #need to get list
+        
+        sources <- list()
+        unmon <- names(data)
+        whM <- which(colnames(sourcesM) == "mons")
+        for(i in 1 : length(unmon)) {
+            whR <- which(sourcesM$mons == unmon[i])
+            temp1 <- sourcesM[whR, -whM]
+            temp <- data.frame(dates[whR], temp1)
+            colnames(temp) <- c("date", colnames(temp1))
+            sources[[i]] <- temp
+        }
+        
+        
+        major.sig <- apca[["vmax"]][["loadings"]][1 : (ncol(data[[1]]) - 1), ]
+        
+        share <- matrix(rep(seq(1, ncol(sources[[i]]) - 1), length(data)), 
+            nrow = length(data), byrow = T)
+        share <- sapply(apply(share, 1, list), 
+            function(x) x[[1]], simplify = F)
+    }
+    
+    #names(sources) <- names(data)
+    
+    out <- list()
+    if(is.null(list)) {
+        list <- as.list(names(data))
+        names(list) <- names(data)
+    }
+    
+    names(sources) <- names(data)
+    
+    out$summary <- getsummary(sources, list, major.sig)
+    out$sources <- sources
+    out$share <- share
+    out$major.sig <- major.sig
+    
+    out
+}
+
+
+sumfun <- function(vec) {
+    out <- c(summary(vec, na.rm = T), IQR(vec, na.rm  =T))
+    names(out)[length(out)] <- "IQR"
+    out
+}
+
+
+
+#get summary for each monitor
+getsummary <- function(sourcec, list, vmax) {
+    #get rid of dates
+    sourcec <- lapply(sourcec, function(x) {
+        x2 <- x[, -1]
+        colnames(x2) <- colnames(x)[-1]
+        x2
+        })
+    #summary stats for each monitor
+    sumstats <- lapply(sourcec, function(x) t(apply(x, 2, sumfun)))
+
+    #median over unique sources
+    unsource <- unique(unlist(sapply(sourcec, colnames, simplify = F)))
+    unsource <- sort(unsource[unsource != "sourceInf"])
+    
+    sumall <- matrix(nrow = length(unsource), ncol = 9)
+    colnames(sumall) <- c(colnames(sumstats[[1]]), "monitor", "counties")
+    rownames(sumall) <- unsource
+    
+    #correspond counties and monitors
+    list <- unlist(list)
+    source1 <- sort(as.numeric(substr(unsource, 7, 7)))
+    cons <- vector()
+    for(j in source1) {
+        
+        #find which column
+        wh1 <- sapply(sourcec, function(x) {
+            s1 <- paste0("source", j)
+            if(s1 %in% colnames(x)) {
+                which(colnames(x) == s1)
+            }else{
+                0
+            }})
+        #get rid of missing
+        sumstats1 <- sumstats[wh1 != 0]
+        cn <- names(sourcec)[wh1 != 0]
+        wh1 <- wh1[wh1 != 0]
+        
+        #find median summary
+        sumj <- mapply(function(x, y) x[y, ], sumstats1, wh1)
+        sumall[j, 1 : 7] <- apply(sumj, 1, median, na.rm = T)
+        sumall[j, 8] <- ncol(sumj)
+        
+        
+        counties <- unique(names(list)[which(list %in% cn)])
+        sumall[j, 9] <- length(counties)
+        
+        vmax1 <- abs(vmax[, j])
+        vmax1 <- sort(vmax1, decreasing = T)
+        cons[j] <- paste(names(vmax1)[which(vmax1 > 0.4)], collapse = ", ")
+    }
+
+    sumall <- data.frame(sumall, cons)
+    sumall    
+}
+
+
+
 
 
 
@@ -118,138 +298,32 @@ gethealth <- function(sourcec, healthdata, formula, lag, groupvar = NULL) {
 
 
 
-getsources <- function(consdata, match = NULL, cut = 1, thres = pi/4, tots = NULL, 
-    method = "SHARE") {
-   
-    if(tolower(method) == "share") {
-        
-        #perform SHARE
-        share1 <- share(data = consdata, cut = cut, thres = thres)
-        share <- share1$share
-        sources <- share1$Sources
-        reg <- share1$major.sig
-        
-        #apply APCA to each monitor
-        sourcec <- list()
-        for(i in 1 : length(consdata)) {
-            nf1 <- length(share[[i]])
-            temp <- apca(data = consdata[[i]], nsources = nf1, tots = tots)$conc
-            colnames(temp) <- c("date", paste0("source", share[[i]]))
-            sourcec[[i]] <- temp
-        }
-        
-        
-        out <- list(share = share, sources = sources, reg = reg,
-            sources = sourcec)
-        
-    }else if(tolower(method) == "mAPCA") {
-        
-        #perform mAPCA
-        mapca <- mAPCA(data = consdata, lim = 50, tots = tots)$apca
-        mapcasource1 <- mapca$conc
-        mapca <- as.matrix(mapca[["vmax"]]$load)
-        
-        #get list of mapca results by monitor
-        cn <- which(colnames(mapcasource1) == "mons")
-        mons <- unique(mapcasource1$mons)
-        sourcec <- list()
-        cn <- c("date", paste0("source", seq(1, ncol(mapcasource1) - 1)))
-        
-        for(i in 1 : length(mons)) {
-            
-             temp <- mapcasource1[which(mapcasource1$mons == mons[i]), -cn]
-             colnames(temp) <- cn
-             sourcec[[i]] <- temp
-        }
-        
-        
-        out <- list(mapca = mapca, sources = sourcec)
-        
-    }else{
-        stop("Method is not recognized.  Must be either mAPCA or SHARE")
-    }
-    
-    #reorder source concentration results
-    if(!is.null(match)) {
-        out$sourcec <- combsource(out$sourcec, match)
-    }
-    out$summary <- getsummary(out$sourcec)
-
-    out
-}
-
-
-
-sumfun <- function(vec) {
-    out <- c(summary(vec, na.rm = T), IQR(vec, na.rm  =T))
-    names(out)[length(out)] <- "IQR"
-    out
-}
-
-
-getsummary <- function(sourcec) {
-    #summary stats for each monitor
-    sumstats <- lapply(sourcec, function(x) t(apply(x, 2, sumfun)))
-    iqrs <- median()
-    dat <- ldply(sourcec, data.frame)
-    aggregate(dat, aggregate(dat, by = list(dat$date), 
-        FUN= "mean", na.rm = T)[, -1])
-    
-}
-
-#columns of sources must be named by source according to SHARE or whatever
-#need first column to be date for each
-combsource <- function(sources, match) {
-    
-    #which duplicated
-    dups <- match[which(duplicated(match))]
-    comms <- sort(unique(match))
-    ind <- 1 * (comms %in% dups)
-    
-    sources1 <- list()
-    for(i in 1 : length(comms)) {
-        
-        #if duplicated monitors in community,  average
-        if(ind[i] == 1) {
-            #find which monitors belong in city dups[i]
-            dat <- sources[[which(match == dups[i])]]
-            
-            #average by date
-            dat <- ldply(dat, data.frame)
-            colnames(dat)[1] <- tolower(colnames(dat)[1])
-            sources1[[i]] <- aggregate(dat, by = list(dat$date), 
-                 FUN= "mean", na.rm = T)[, -1]
-            
-            
-        #otherwise, take that one monitor
-        }else{
-            
-            sources1[[i]] <- sources[[which(match == comms[i])]]
-        }
-    }
-    names(sources1) <- comms
-    sources1
-    
-}
 
 
 
 
 
 
-#create list of scores by city
-#conc is estimated source conc for each monitor
-#share is what is shared between monitors
-getallsource <- function(conc, share, mons1, allmons) {
+
+
+
+#' \code{getallsource} Averages source concentrations for monitors in the same community
+#' 
+#' @param conc list of source concentrations for each monitor
+#' @param share list of sources present at each monitor
+#' @param mons1 list of communities where each element is vector of monitors in that community
+#' @param allmons 
+#
+#' @export
+getallsource <- function(conc, share, mons1) {
     
     namesDUP <- names(which(sapply(mons1, 
                                    function(x) length(x)) != 1))
     
+    allmons <- names(conc)
     #average sources in same city
     scoresMerge <- list()	
     for(i in 1: length(namesDUP)) {
-        # if(i == 8) {browser()}
-        # print(i)
         scoresMerge[[i]] <- dupfun(namesDUP[i], conc, mons1, allmons, share)
     }
     
@@ -265,53 +339,31 @@ getallsource <- function(conc, share, mons1, allmons) {
         if(city %in% namesDUP) {
             scoresAll[[i]] <- scoresMerge[[k]]
             
+            #rename sources
             cn <- colnames(scoresMerge[[k]])[-1]
-            # cnt <- sapply(strsplit(cn, "\\."), function(x) x[2])
             shareN[[i]] <- as.numeric(substring(cn, 7))
             
             k <- k + 1
         }else{
+        	#get source concentrations
             mon1 <- mons1[[i]]
             whMon <- which(allmons %in% mon1)
             temp <- conc[[whMon]]
+            
+            #rename columns
             cnt <- colnames(temp)[-1]
             cnt <- sapply(strsplit(cnt, "\\."), function(x) x[2])
             colnames(temp) <- c("Date", paste0("source", cnt))
+            
+            #save output
             scoresAll[[i]] <- temp
             shareN[[i]] <- share[[whMon]]
         }	
     }
     names(scoresAll) <- names(mons1)
-    list(scoresAll, shareN)
+    list(scores = scoresAll, share = shareN)
 }
 
-
-
-
-getsources <- function(dat, nf1, type1, bstar1 = NULL, stdrow = T,
-                       shares = NULL, tots = NULL) {
-    
-    if(type1 == "true") {
-        sourceconc <- dat
-        
-    }else if(type1 == "apca") {
-        temp <- abspca(dat, tots, nfactors = nf1, bstar1 = bstar1)
-        sourceconc <- temp[[1]]
-        
-    }
-    
-    if(!is.null(shares)) {
-        sourceconc1 <- try(sourceconc[, shares])
-        if(class(sourceconc1) == "try-error") {
-            browser()
-        }else{
-            sourceconc <- sourceconc1
-        }
-    }
-    sourceconc
-    
-    
-}
 
 
 
@@ -408,7 +460,7 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
     shareMon <- share[whMon]
     
     
-#find unique sources in this city
+	#find unique sources in this city
     unsource <- sort(unique(unlist(shareMon)))
     whInf <- which(is.infinite(unsource))
     if(length(whInf) > 0) {
@@ -418,7 +470,7 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
     #merge all sources
     scoresMERGE <- list()
     for(j in 1 : length(unsource)) {
-        # print(j)
+        # find which monitors have source j
         whT <- sapply(shareMon, function(x) (unsource[j] %in% x))
         scoresJ <- conc[whT]
         wS <- sapply(shareMon[whT], function(x) which(x == unsource[j]))
@@ -430,7 +482,7 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
         scoresJall <- scoresJ[[1]][, c(1, wS[1] + 1)]
         colnames(scoresJall) <- c("Date", paste0("source", unsource[j]))
         
-        #if more than 1 monitor, merge data
+        #if more than 1 monitor, merge data by date
         if(length(whT) > 1) {
             for(k in 2 : length(whT)) {
                 
@@ -445,6 +497,7 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
             scoresMERGE[[j]] <- data.frame(scoresJall[, 1], temp)
             colnames(scoresMERGE[[j]]) <- c("Date", paste0("source", unsource[j]))
             
+        #if only one monitor measures, use that monitor
         }else{
             
             scoresMERGE[[j]] <- scoresJall
@@ -464,39 +517,3 @@ dupfun <- function(nameC, conc, mons1, allmons, share = share) {
     
 }
 
-
-#function to read TLNise convergence from file
-readTLNconv <- function(filename) {
-    text <- scan(filename, what = "string")
-    
-    
-    #find location of all convergence items
-    whTLN <- which(text == "TLN:")
-    whTLN <- c(whTLN, whTLN + 1, whTLN + 2)
-    whC <- which(text == "Converged")
-    whC <- c(whC, whC + 2)
-    whNC <- which(text == "converge")
-    text2 <- text[sort(c(whTLN, whC, whNC))]
-    whTLN2 <- which(text2 == "TLN:")
-    
-    
-    #for each iteration (whTLN2), concat convergence info
-    outs <- vector()
-    for(i in 1 : (length(whTLN2) - 1)) {
-        
-        start <- whTLN2[i]
-        stops <- whTLN2[i + 1] - 1
-        outs[i] <- paste(text2[(start : stops)], collapse = "/")
-    }
-    
-    #find non-convergence
-    outs2 <- outs[which(substring(outs, 10, 10) == "c")]
-    
-    #make output nice
-    outs2 <- strsplit(substr(outs2, 6, 8), "/")
-    nonconv <- sapply(outs2, function(x) paste0("source=", 
-                                                paste(x, collapse = ", method=")))
-    
-    list(nonconv, paste(text2, collapse = ""))	
-    
-}
