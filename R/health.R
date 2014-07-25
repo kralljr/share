@@ -43,8 +43,10 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
             regcoef[[i]] <- get.hosp(dat = healthdata[[i]], sources = sourcec[[i]], 
                 lag = lag, formu = form1, gv = gv)
         }
-        names(regcoef[[i]])
+        
         regcoefREG <- combhealth(regcoef, print = print)
+        sources <- as.numeric(substr(rownames(regcoefREG), 7, 7))
+        regcoefREG <- regcoefREG[order(sources), ]
         
         out$regcoef <- regcoefREG
         
@@ -53,7 +55,7 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
             iqrs <- out$summary["IQR"]
         }
         
-        out$iqrinc <- apply(regcoefREG, 2, percinc, iqrs = iqrs)
+        out$iqrinc <- apply(regcoefREG, 2, percinc, scale = iqrs)
         
     }
     
