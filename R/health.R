@@ -28,23 +28,33 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
         #get source concentrations, averaged over community
         if(!is.null(list)) {
            
-            out$sourceorder <- combsource(out$sources, list)
+            sourcec <- combsource(out$sources, list)
+            out$sourceorder <- sourcec
+        }else{
+            
+            sourcec <- out$sources
         }
 
         
         #get health effects
-#         regcoef <- gethealth(sourcec, healthdata, formula, lag)
-#         regcoefREG <- combhealth(regcoef, print = print)
-#         
-#         out$regcoef <- regcoefREG
-#         
-#         #iqr increase
-#         if(is.null(iqrs)) {
-#             iqrs <- out$summary["IQR"]
-#         }
-#         
-#         out$iqrinc <- apply(regcoefREG, 2, percinc, iqrs = iqrs)
-#         
+        regcoef <- list()
+        for(i in 1 : length(healthdata)) {
+            print(i)
+            regcoef[[i]] <- get.hosp(dat = healthdata[[i]], sources = sourcec[[i]], 
+                lag = lag, formu = form1, gv = gv)
+        }
+        names(regcoef[[i]])
+        regcoefREG <- combhealth(regcoef, print = print)
+        
+        out$regcoef <- regcoefREG
+        
+        #iqr increase
+        if(is.null(iqrs)) {
+            iqrs <- out$summary["IQR"]
+        }
+        
+        out$iqrinc <- apply(regcoefREG, 2, percinc, iqrs = iqrs)
+        
     }
     
     
@@ -52,6 +62,89 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
     
     out
 }
+
+
+# dat is hosp dat for one county
+# sources is sources for one county
+# lag is lag
+get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat") {
+    
+    #merge with sources
+    colnames(dat) <- tolower(colnames(dat))
+    colnames(sources) <- tolower(colnames(sources))
+    merged <- merge(dat, sources, all.x = T, 
+                    by = "date")
+    
+    #get lag info	
+    #which columns are sources
+    whSource <- which(substr(colnames(merged), 1, 4) == "sour")
+    lagSource <- vector(, length = nrow(merged))
+    
+    temp2 <- rep(NA, nrow(merged))
+    #for each source, #lag by agecat
+    for(i in 1 : length(whSource)) {
+        
+        sour <- merged[, whSource[i]]	
+        #for each source with at least 1 day of data
+        if(length(which(!is.na(sour))) > 0) {
+            
+            #if group variable
+            if(!is.null(gv)) {
+                gv1 <- merged[, gv]
+            }else{
+                gv1 <- gv
+            }
+            
+            temp <- Lag(sour, k = lag, group = gv1)
+            lagSource <- cbind(lagSource, temp)
+        
+        #else all NA    
+        }else{
+            lagSource <- cbind(lagSource, temp2)
+        }
+    }
+    lagSource <- lagSource[, -1]
+    
+    #add in lagged sources
+    merged[, whSource] <- lagSource
+    
+    #number of years of data (should be 12)
+    years <- length(unique(substr(merged$date, 1, 4)))
+    
+    #get formula
+    formUSE1 <- paste0(formu, years)
+    
+    #set up estimates
+    ests <- matrix(nrow = length(whSource), ncol = 2)
+    #for each source
+    for(l in 1 : length(whSource)) {
+        # print(c("l", l))
+        covar1 <- paste(colnames(merged)[whSource[l]], collapse = "+")
+        formUSE <- paste0(outcome, " ~", covar1, "+", formUSE1, ")")
+        
+        #run model
+        glm1 <- try(glm(formula = eval(formUSE), 
+                        data = merged, family = "quasipoisson",
+                        offset = log(denom)), silent = T)
+        
+        #save results
+        if(class(glm1[1]) != "try-error") {
+            out1 <- summary(glm1)$coef
+            whS <- which(substr(rownames(out1), 1, 4) == "sour")
+            out <- out1[whS, c(1, 2)]
+        }else{
+            out <- c(NA, NA)
+        }
+        ests[l, ] <- out
+        
+    }
+    
+    rownames(ests) <- colnames(merged)[whSource]
+    colnames(ests) <- c("est", "se")
+    ests
+}
+
+
 
 
 combsource <- function(outsource, list) {
@@ -63,7 +156,7 @@ combsource <- function(outsource, list) {
     sources <- list()
     for(i in 1 : length(list)) {
         if(lens[i] == 1) {
-            sources[[i]] <- outsource[list[[i]]]
+            sources[[i]] <- outsource[[list[[i]]]]
         }else{
             source1 <- outsource[list[[i]]]
             source1 <- ldply(source1, data.frame)[, -1]
@@ -219,9 +312,14 @@ getsummary <- function(sourcec, list, vmax) {
 
 combhealth <- function(regcoef, print = F) {
     
+    regcoef <- sapply(regcoef, function(x) {
+        x <- data.frame(rownames(x), x)
+        colnames(x) <- c("source", "est", "se")
+        x
+        }, simplify = F)
     regcoef <- ldply(regcoef, data.frame)
     sources <- unique(regcoef$source)
-    
+    sources <- sources[substr(sources, 7, 7) != "i"]
     regcoefREG <- matrix(nrow = length(sources), ncol = 2)
     rownames(regcoefREG) <- sources
     colnames(regcoefREG) <- c("est", "se")
@@ -232,10 +330,10 @@ combhealth <- function(regcoef, print = F) {
         #combine results
         if(nrow(regcoef1) > 1) {
             tln1 <- tlniseC(Y = regcoef1$est, V = regcoef1$se^2, 
-                prnt = print)
+                prnt = print, brief = 2)
             if(tln1$converge == "no") {
 		tln1 <- tlniseC(Y = regcoef1$est, V = regcoef1$se^2, 
-                    prnt = print, maxiter = 5000)
+                    prnt = print, maxiter = 5000, brief = 2)
                 if(tln1$converge == "no") {
                     cat("\nDid not converge: source", sources[i], "\n")
                 }
@@ -301,68 +399,6 @@ gethealth <- function(sourcec, healthdata, formula, lag, groupvar = NULL) {
 
 
 
-
-
-
-
-
-
-#' \code{getallsource} Averages source concentrations for monitors in the same community
-#' 
-#' @param conc list of source concentrations for each monitor
-#' @param share list of sources present at each monitor
-#' @param mons1 list of communities where each element is vector of monitors in that community
-#' @param allmons 
-#
-#' @export
-getallsource <- function(conc, share, mons1) {
-    
-    namesDUP <- names(which(sapply(mons1, 
-                                   function(x) length(x)) != 1))
-    
-    allmons <- names(conc)
-    #average sources in same city
-    scoresMerge <- list()	
-    for(i in 1: length(namesDUP)) {
-        scoresMerge[[i]] <- dupfun(namesDUP[i], conc, mons1, allmons, share)
-    }
-    
-    
-    #for each city
-    k <- 1
-    scoresAll <- list()
-    shareN <- list()
-    for(i in 1 : length(mons1)) {
-        
-        city <- names(mons1)[i]
-        # print(city)
-        if(city %in% namesDUP) {
-            scoresAll[[i]] <- scoresMerge[[k]]
-            
-            #rename sources
-            cn <- colnames(scoresMerge[[k]])[-1]
-            shareN[[i]] <- as.numeric(substring(cn, 7))
-            
-            k <- k + 1
-        }else{
-        	#get source concentrations
-            mon1 <- mons1[[i]]
-            whMon <- which(allmons %in% mon1)
-            temp <- conc[[whMon]]
-            
-            #rename columns
-            cnt <- colnames(temp)[-1]
-            cnt <- sapply(strsplit(cnt, "\\."), function(x) x[2])
-            colnames(temp) <- c("Date", paste0("source", cnt))
-            
-            #save output
-            scoresAll[[i]] <- temp
-            shareN[[i]] <- share[[whMon]]
-        }	
-    }
-    names(scoresAll) <- names(mons1)
-    list(scores = scoresAll, share = shareN)
-}
 
 
 
@@ -448,72 +484,16 @@ tlncomb <- function(ests, Sources, share, sinkf = NULL, names = cities) {
 }
 
 
-#nameC is name of city
-#conc is matrix of dates and estimated source conc
-#share is share matrix from domatchsim
-dupfun <- function(nameC, conc, mons1, allmons, share = share) { 
-    
-    #find monitors corresponding to city
-    mons <- mons1[[nameC]]
-    whMon <- which(allmons %in% mons)
-    conc <- conc[whMon]
-    shareMon <- share[whMon]
-    
-    
-	#find unique sources in this city
-    unsource <- sort(unique(unlist(shareMon)))
-    whInf <- which(is.infinite(unsource))
-    if(length(whInf) > 0) {
-        unsource <- unsource[-whInf]
-    }
-    
-    #merge all sources
-    scoresMERGE <- list()
-    for(j in 1 : length(unsource)) {
-        # find which monitors have source j
-        whT <- sapply(shareMon, function(x) (unsource[j] %in% x))
-        scoresJ <- conc[whT]
-        wS <- sapply(shareMon[whT], function(x) which(x == unsource[j]))
-        whT <- which(whT == T)
-        
-        
-        #get first monitor info
-        #add one for date
-        scoresJall <- scoresJ[[1]][, c(1, wS[1] + 1)]
-        colnames(scoresJall) <- c("Date", paste0("source", unsource[j]))
-        
-        #if more than 1 monitor, merge data by date
-        if(length(whT) > 1) {
-            for(k in 2 : length(whT)) {
-                
-                scoresJk <- scoresJ[[k]][, c(1, wS[k] + 1)]
-                scoresJall <- merge(scoresJall, scoresJk, 
-                                    by = "Date", all.x = T, all.y = T)
-            }
-            
-            #average source concentrations
-            temp <- scoresJall[, -1]
-            temp <- apply(temp, 1, mean, na.rm = T)
-            scoresMERGE[[j]] <- data.frame(scoresJall[, 1], temp)
-            colnames(scoresMERGE[[j]]) <- c("Date", paste0("source", unsource[j]))
-            
-        #if only one monitor measures, use that monitor
-        }else{
-            
-            scoresMERGE[[j]] <- scoresJall
-        }
-        
-        
-        if(j == 1) {
-            tempJ <- scoresMERGE[[j]]
-        }else{
-            tempJ <- merge(tempJ, scoresMERGE[[j]], 
-                           by = "Date", all.x = T, all.y = T)
-            
-        }
-        
-    }#end loop over j
-    tempJ
-    
-}
 
+#' \code{percinc} Percent increase
+#' 
+#' @param beta regression coefficients from poisson model
+#' @param scale amount for percent increase
+percinc <- function(beta, scale = 10) {
+    
+    if(!is.na(beta[1])) {
+        100 * (exp(beta * scale ) - 1)
+    }else{
+        beta
+    }
+}
