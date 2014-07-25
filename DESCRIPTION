@@ -14,7 +14,8 @@ Imports:
     clue (>= 0.3),
     tsModel (>= 0.6),
     tlnise (>= 2.0),
-    plyr (>= 1.8)
+    plyr (>= 1.8),
+    splines (>= 3.1)
 Suggests:
     maps,
     ggplot2
