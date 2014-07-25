@@ -491,6 +491,7 @@ tlncomb <- function(ests, Sources, share, sinkf = NULL, names = cities) {
 #' 
 #' @param beta regression coefficients from poisson model
 #' @param scale amount for percent increase
+#' @export
 percinc <- function(beta, scale = 10) {
     
     if(!is.na(beta[1])) {

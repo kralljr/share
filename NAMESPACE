@@ -3,6 +3,7 @@
 export(angle)
 export(mAPCA)
 export(matchfun)
+export(percinc)
 export(share)
 export(sharehealth)
 export(tlniseC)
