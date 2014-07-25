@@ -3,6 +3,7 @@
 #' @name share
 #' @docType package
 #' @importFrom clue solve_LSAP
-#' @importFrom tsModel Lag
+#' @import tsModel
+#' @import plyr
 #' @import tlnise
 NULL
