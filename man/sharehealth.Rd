@@ -3,15 +3,16 @@
 \alias{sharehealth}
 \title{Find sources SHared Across a REgion (SHARE)}
 \usage{
-sharehealth(consdata, healthdata, match, formula, lag, groupvar, print = F,
-  cut = 1, thres = pi/4, tots = NULL, method = "SHARE")
+sharehealth(consdata, healthdata = NULL, list = NULL, formula = NULL,
+  iqrs = NULL, lag = NULL, groupvar = NULL, print = F, cut = 1,
+  thres = pi/4, tots = NULL, method = "SHARE")
 }
 \arguments{
 \item{consdata}{list of data frames of daily constituent concentrations with date as first column for each monitor}
 
 \item{healthdata}{list of data frames corresponding to health counts and covariates with date as first column for each community}
 
-\item{match}{vector of length equal to consdata indicating which monitors correspond to which elements in healthdata}
+\item{list}{list of length equal to healthdata indicating which monitors correspond to which elements in healthdata}
 
 \item{tots}{list of vectors corresponding to total concentrations (total PM2.5) for each day and monitor.  If null, uses \code{rowSums(data)}}
 
