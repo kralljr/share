@@ -48,6 +48,7 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
         sources <- as.numeric(substr(rownames(regcoefREG), 7, 7))
         regcoefREG <- regcoefREG[order(sources), ]
         
+        out$hcounty <- regcoef
         out$regcoef <- regcoefREG
         
         #iqr increase
