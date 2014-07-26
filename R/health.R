@@ -125,9 +125,11 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
         formUSE <- paste0(outcome, " ~", covar1, "+", formUSE1, ")")
         
         #run model
+        options(warn = 2)
         glm1 <- try(glm(formula = eval(formUSE), 
                         data = merged, family = "quasipoisson",
                         offset = log(denom)), silent = T)
+        options(warn = 1)
         if(class(glm1[1]) == "try-error") {
             glm1 <- try(glm(formula = eval(formUSE), 
                 data = merged, family = "quasipoisson",
