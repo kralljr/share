@@ -128,6 +128,12 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
         glm1 <- try(glm(formula = eval(formUSE), 
                         data = merged, family = "quasipoisson",
                         offset = log(denom)), silent = T)
+        if(class(glm1[1]) == "try-error") {
+            glm1 <- try(glm(formula = eval(formUSE), 
+                data = merged, family = "quasipoisson",
+                offset = log(denom), control = list(epsilon = .00001)), 
+                silent = T)
+        }
         
         #save results
         if(class(glm1[1]) != "try-error") {
