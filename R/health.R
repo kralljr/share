@@ -130,7 +130,8 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
                         data = merged, family = "quasipoisson",
                         offset = log(denom)), silent = T)
         options(warn = 1)
-        if(suppressWarnings(class(glm1)) == "try-error") {
+        tf <- suppressWarnings(class(glm1) == "try-error")
+        if(tf) {
             glm1 <- try(glm(formula = eval(formUSE), 
                 data = merged, family = "quasipoisson",
                 offset = log(denom), control = list(epsilon = .00001)), 
@@ -138,7 +139,8 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
         }
         
         #save results
-        if(suppressWarnings(class(glm1))  != "try-error") {
+        tf <- suppressWarnings(class(glm1)  != "try-error")
+        if(tf) {
             out1 <- summary(glm1)$coef
             whS <- which(substr(rownames(out1), 1, 4) == "sour")
             out <- out1[whS, c(1, 2)]
