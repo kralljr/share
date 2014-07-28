@@ -14,6 +14,7 @@ ppart <- function(vec) {
 #' \code{whichCS} Find matches from matchfun
 #'
 #' @param locreg matrix of nsources by nmsources of matches
+#' @export
 whichCS <- function(locreg) {
     lr <- suppressWarnings(apply(locreg, 1, function(x) min(which(x > 0))))
     lr
