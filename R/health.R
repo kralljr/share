@@ -193,7 +193,7 @@ getsources <- function(data, type = "share", tots = tots, list = NULL) {
         share <- share1$share
         
         sources <- list()
-        for(i in 1 : length(data.rr)) {
+        for(i in 1 : length(data)) {
             if(is.null(tots)) {
                 tots1 <- tots
             }else{
