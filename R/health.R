@@ -132,7 +132,7 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
                         offset = log(denom)), silent = T)
         options(warn = 1)
         tf <- suppressWarnings(class(glm1) == "try-error")
-        if(tf) {
+        if(tf[1]) {
             glm1 <- try(glm(formula = eval(formUSE), 
                 data = merged, family = "quasipoisson",
                 offset = log(denom), control = list(epsilon = .00001)), 
@@ -141,7 +141,7 @@ get.hosp <- function(dat, sources, lag, formu, outcome = "cardio", gv = "agecat"
         
         #save results
         tf <- suppressWarnings(class(glm1)  != "try-error")
-        if(tf) {
+        if(tf[1]) {
             out1 <- summary(glm1)$coef
             whS <- which(substr(rownames(out1), 1, 4) == "sour")
             out <- out1[whS, c(1, 2)]
@@ -356,7 +356,7 @@ combhealth <- function(regcoef, print = F) {
             
         }else{
             
-            regcoefREG[i, ] <- regcoef1
+            regcoefREG[i, ] <- as.matrix(regcoef1)
         }
     }
     
