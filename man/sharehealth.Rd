@@ -4,8 +4,8 @@
 \title{Find sources SHared Across a REgion (SHARE)}
 \usage{
 sharehealth(consdata, healthdata = NULL, list = NULL, formula = NULL,
-  iqrs = NULL, lag = NULL, groupvar = NULL, print = F, cut = 1,
-  thres = pi/4, tots = NULL, method = "SHARE")
+  lag = NULL, groupvar = NULL, print = F, cut = 1, thres = pi/4,
+  tots = NULL, method = "SHARE")
 }
 \arguments{
 \item{consdata}{list of data frames of daily constituent concentrations with date as first column for each monitor}
