@@ -14,7 +14,7 @@
 #
 #' @export
 sharehealth <- function(consdata, healthdata = NULL, list = NULL, 
-    formula = NULL, iqrs = NULL,
+    formula = NULL, 
     lag = NULL, groupvar = NULL, print = F, 
     cut = 1, thres = pi/4,
     tots = NULL, method = "SHARE") {
@@ -51,10 +51,8 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
         out$hcounty <- regcoef
         out$regcoef <- regcoefREG
         
-        #iqr increase
-        if(is.null(iqrs)) {
-            iqrs <- out$summary["IQR"]
-        }
+        #iqr increase (IQRS from data)
+        iqrs <- out$summary["IQR"]
         
         lb <- regcoefREG[, 1] - 1.96 * regcoefREG[, 2]
         lb <- percinc(lb, scale = iqrs)
