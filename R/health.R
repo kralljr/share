@@ -56,7 +56,16 @@ sharehealth <- function(consdata, healthdata = NULL, list = NULL,
             iqrs <- out$summary["IQR"]
         }
         
-        out$iqrinc <- apply(regcoefREG, 2, percinc, scale = iqrs)
+        lb <- regcoefREG[, 1] - 1.96 * regcoefREG[, 2]
+        lb <- percinc(lb, scale = iqrs)
+        ub <- regcoefREG[, 1] + 1.96 * regcoefREG[, 2]
+        ub <- percinc(ub, scale = iqrs)
+        
+        est <- percinc(regcoefREG[, 1], scale = iqrs)
+        
+        percincci <- data.frame(est, lb, ub)
+        colnames(percincci) <- c("est", "lb", "ub")
+        out$iqrinc <- percincci
         
     }
     
