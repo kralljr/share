@@ -35,7 +35,7 @@ The first column of each dataframe is date and all subsequent
 columns are concentrations of chemical constituents.
 }
 \examples{
-data(simdat)
-share(simdat)
+data(consConc)
+share(consConc)
 }
 
