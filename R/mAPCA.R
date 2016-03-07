@@ -11,8 +11,12 @@
 #' @param lim Number of days to include data
 #' @export
 #' @examples
-#' data(nycdat)
-#' mAPCA(list(nycdat))
+#' data(consConc)
+#' data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
+#' pm <- lapply(consConc, function(x) x$PM25_SPEC)
+#' mapca1 <- mAPCA(data, pm)
+#' # Look at source loadings
+#' mapca1$apca$vmax$loadings 
 mAPCA <- function(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL, 
     cut = 1, lim = 50) {
     
