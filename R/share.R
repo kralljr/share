@@ -51,7 +51,7 @@ share <- function(data, cut = 1, nmsources = NULL, thres = pi/4, ndays = 50) {
     share$source.sig <- source.sig
     share$Sources <- Sources
     share$share <- share1
-    share$angle <- angle
+    share$angle <- ang
     share$match <- match
     share$shareREORG <- shareREORG
     
