@@ -19,7 +19,9 @@
 #' @export
 #' @examples
 #' data(consConc)
-#' share(consConc)
+#' # remove PM2.5
+#' data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
+#' share(data)
 share <- function(data, cut = 1, nmsources = NULL, thres = pi/4, ndays = 50) {
     
     #Apply vPCA to each monitor and across all monitors
