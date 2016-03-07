@@ -18,8 +18,8 @@
 #' @param ndays number of days of data necessary to apply PCA for each monitor
 #' @export
 #' @examples
-#' data(simdat)
-#' share(simdat)
+#' data(consConc)
+#' share(consConc)
 share <- function(data, cut = 1, nmsources = NULL, thres = pi/4, ndays = 50) {
     
     #Apply vPCA to each monitor and across all monitors
