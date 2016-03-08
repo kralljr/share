@@ -35,7 +35,13 @@ The first column of each dataframe is date and all subsequent
 columns are concentrations of chemical constituents.
 }
 \examples{
+library(handles)
+library(share)
 data(consConc)
-share(consConc)
+# remove PM2.5
+data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
+share1 <- share(data)
+# Look at major sources
+round(share1$major.sig, 2)
 }
 

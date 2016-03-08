@@ -26,7 +26,13 @@ mAPCA(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL,
 \code{mAPCA} Apply mAPCA to pollution data
 }
 \examples{
-data(nycdat)
-mAPCA(list(nycdat))
+library(handles)
+library(share)
+data(consConc)
+data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
+pm <- lapply(consConc, function(x) x$PM25_SPEC)
+mapca1 <- mAPCA(data, pm)
+# Look at source loadings
+mapca1$apca$vmax$loadings 
 }
 
