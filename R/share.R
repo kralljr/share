@@ -18,6 +18,8 @@
 #' @param ndays number of days of data necessary to apply PCA for each monitor
 #' @export
 #' @examples
+#' library(handles)
+#' library(share)
 #' data(consConc)
 #' # remove PM2.5
 #' data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
