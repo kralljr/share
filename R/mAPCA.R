@@ -11,6 +11,8 @@
 #' @param lim Number of days to include data
 #' @export
 #' @examples
+#' library(handles)
+#' library(share)
 #' data(consConc)
 #' data <- lapply(consConc, function(x) x[, -which(colnames(x) == "PM25_SPEC")])
 #' pm <- lapply(consConc, function(x) x$PM25_SPEC)
