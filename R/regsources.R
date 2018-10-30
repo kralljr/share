@@ -123,6 +123,7 @@ vPCA <- function(data, nsources = NULL, cut = 1) {
 #' @param data data frame of daily constituent concentrations 
 #' @param nsource number of sources.  If null, uses number of eigenvalues of the correlation matrix greater than cut.
 #' @param cut cutoff for eigenvalues (see nsource), default is 1.
+#' @export
 vPCAf <- function(data, i, nsources = NULL, cut = 1) {
     
     #Standardize data
