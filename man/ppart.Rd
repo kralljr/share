@@ -12,4 +12,3 @@ ppart(vec)
 \description{
 \code{ppart} Gets positive part of a vector
 }
-

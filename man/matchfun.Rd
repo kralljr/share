@@ -16,4 +16,3 @@ matchfun(source.sig, major.sig, thres = pi/4)
 \description{
 \code{matchfun} Matches major and local source signatures
 }
-

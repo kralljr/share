@@ -14,4 +14,3 @@ percinc(beta, scale = 10)
 \description{
 \code{percinc} Percent increase
 }
-

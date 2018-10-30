@@ -15,4 +15,3 @@ tlniseC(Y, V, w = NA, V0 = NA, prior = NA, N = 1000, seed = NULL,
 Reproduces tlnise function from tlnise package, but gives convergence output.
 See ?tlnise for more info.
 }
-

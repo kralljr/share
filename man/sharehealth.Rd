@@ -27,4 +27,3 @@ This function 1) Applies SHARE, 2) Estimates sources using
 APCA at each monitor, 3) Estimates health effects for each community, 
 and 4) Estimates regional health effects for each source
 }
-

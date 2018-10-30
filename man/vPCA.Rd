@@ -16,4 +16,3 @@ vPCA(data, nsources = NULL, cut = 1)
 \description{
 Applies PCA with a varimax rotation to data from a single monitor
 }
-

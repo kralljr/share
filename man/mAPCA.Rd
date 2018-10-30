@@ -4,8 +4,8 @@
 \alias{mAPCA}
 \title{Functions for mAPCA}
 \usage{
-mAPCA(data, tots = NULL, nsources = NULL, adjust = NULL, mdl = NULL,
-  cut = 1, lim = 50)
+mAPCA(data, tots = NULL, nsources = NULL, adjust = NULL,
+  mdl = NULL, cut = 1, lim = 50)
 }
 \arguments{
 \item{data}{list of data frames of daily constituent concentrations with date as first column}
@@ -35,4 +35,3 @@ mapca1 <- mAPCA(data, pm)
 # Look at source loadings
 mapca1$apca$vmax$loadings 
 }
-

@@ -19,4 +19,3 @@ data(simdat)
 share1 <- share(simdat)
 angle(share1$major.sig, share1$source.sig)
 }
-

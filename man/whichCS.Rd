@@ -12,4 +12,3 @@ whichCS(locreg)
 \description{
 \code{whichCS} Find matches from matchfun
 }
-

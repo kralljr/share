@@ -22,4 +22,3 @@ outervPCA(data, ndays = 50, cut = 1, nmsource = NULL)
 Applies vPCA to data from each monitor, and then
 a second vPCA to the PCs from the first stage to find regional sources
 }
-

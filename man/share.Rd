@@ -20,8 +20,6 @@ share(data, cut = 1, nmsources = NULL, thres = pi/4, ndays = 50)
 \item{ndays}{number of days of data necessary to apply PCA for each monitor}
 }
 \description{
-share.
-
 \code{share} estimates major sources of pollution using the share method
 }
 \details{
@@ -44,4 +42,3 @@ share1 <- share(data)
 # Look at major sources
 round(share1$major.sig, 2)
 }
-

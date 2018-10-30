@@ -19,4 +19,3 @@ Note: on the log scale
 }
 }
 \keyword{datasets}
-

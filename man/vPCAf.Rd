@@ -16,4 +16,3 @@ vPCAf(data, i, nsources = NULL, cut = 1)
 \description{
 \code{vPCAf} Applies PCA and vPCA and formats outcome
 }
-
